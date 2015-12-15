@@ -40,13 +40,17 @@ public class MainActivity extends AppCompatActivity {
     EditText setMessage;
     TextView viewMessage;
     LinearLayout edit;
+    Button userScore;
     String message = "";
     SharedPreferences sharedPref;
     String URL = "";
     JSONArray arr;
     static JSONObject obj = null;
     String TodayWord = "";
-    Boolean vibrate = true;
+    public boolean vibrate = true;
+    int score = 0;
+    String uniqueWords = "";
+    boolean unique = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,28 +59,28 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         toolbar.setTitle("Appcelerator");
+        toolbar.setNavigationIcon(R.drawable.icon);
 
         saveMessage = (Button) findViewById(R.id.saveMessage);
         editMessage = (Button) findViewById(R.id.editMessage);
         setMessage = (EditText) findViewById(R.id.message);
         viewMessage = (TextView) findViewById(R.id.viewMessage);
         edit = (LinearLayout) findViewById(R.id.LayoutViewMessage);
+        userScore = (Button) findViewById(R.id.score);
         sharedPref = getApplicationContext().getSharedPreferences("UserMessage", Context.MODE_PRIVATE);
+        uniqueWords = sharedPref.getString("uniqueWord", "");
+        score = sharedPref.getInt("Score", 0);
+        Log.d("Variables on Start:-", score+" "+uniqueWords +"Mess:- "+message);
+        vibrate = sharedPref.getBoolean("vibrate", false);
 
+        userScore.setText("Score:- "+ score+" points");
         updateUI(sharedPref);
 
         callAPI();
 
-        TodayWord = sharedPref.getString("Today_Word", "").toLowerCase();
+//        TodayWord = sharedPref.getString("Today_Word", "").toLowerCase();
 
-        if (viewMessage.getText().toString().toLowerCase().contains(TodayWord) && vibrate){
-//            final Toast toast = Toast.makeText(getApplicationContext(), "Word found:- "+ TodayWord, Toast.LENGTH_SHORT);
-//            toast.show();
-            Vibrator v = (Vibrator)getSystemService(Context.VIBRATOR_SERVICE);
-            // pass the number of millseconds fro which you want to vibrate the phone here we
-            // have passed 2000 so phone will vibrate for 2 seconds.
-            v.vibrate(2000);
-        }
+
     }
 
     private void callAPI() {
@@ -104,7 +108,7 @@ public class MainActivity extends AppCompatActivity {
         else{
             setMessage.setVisibility(View.VISIBLE);
             saveMessage.setVisibility(View.VISIBLE);
-            vibrate = false;
+//            vibrate = false;
         }
         saveMessage.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -222,13 +226,27 @@ public class MainActivity extends AppCompatActivity {
             Log.d("Result", result);
             try {
                 obj = new JSONObject(result);
-                sharedPref = getApplicationContext().getSharedPreferences("UserMessage", Context.MODE_PRIVATE);
-                SharedPreferences.Editor editor = sharedPref.edit();
-                editor.putString("Today_Word", obj.getString("word"));
-                editor.apply();
-                obj.getString("word");
-                Log.d("WOrd:- ", obj.getString("word"));
-            } catch (JSONException e) {
+                TodayWord = obj.getString("word");
+                Log.d("Today's word:- ", TodayWord + "");
+                Log.d("Unique Word:- ", uniqueWords.toLowerCase() + "");
+                if (viewMessage.getText().toString().toLowerCase().contains(TodayWord) && !(uniqueWords.toLowerCase().contains(TodayWord))) {
+
+                    sharedPref = getApplicationContext().getSharedPreferences("UserMessage", Context.MODE_PRIVATE);
+                    SharedPreferences.Editor editor = sharedPref.edit();
+                    uniqueWords += TodayWord +" ";
+                    editor.putString("uniqueWord", uniqueWords);
+                    score += 1;
+                    Log.d("Score:- ", score + "");
+                    userScore.setText("Score:-" + score + " points");
+                    editor.putInt("Score", score);
+                    Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+                    // pass the number of milliseconds fro which you want to vibrate the phone here we
+                    // have passed 1200 so phone will vibrate for 1.2 seconds.
+                    v.vibrate(1200);
+                    editor.apply();
+                }
+            }
+            catch(JSONException e){
                 e.printStackTrace();
             }
         }
